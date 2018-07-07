@@ -1,0 +1,49 @@
+
+#notes-list {
+  display: inline-block;
+  padding: 0px;
+  margin-left: 40px;
+}
+ 
+#notes-list li {
+  list-style: none;
+  margin-bottom: 1em;
+}
+
+#notes-list .title {
+  font-weight: bold;
+  margin: 0px;
+}
+
+#notes-list textarea.title {
+  height: 1.5em;
+  width: 100%;
+}
+
+#notes-list .delete {
+  float: right;
+  border: 1px solid aliceblue;
+}
+
+#notes-list .body {
+  margin: 0px 3em 0px 0px;
+}
+
+#notes-list textarea.body {
+  height: 20ex;
+  width: 100%;
+}
+
+#note-add {
+  margin-left: 40px;
+}
+
+#note-add input {
+  width: 40em;
+}
+
+#note-add textarea {
+  width: 40em;
+  height: 20ex;
+}
+

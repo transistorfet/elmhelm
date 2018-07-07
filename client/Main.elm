@@ -4,9 +4,10 @@ import Html
 import Task
 import Html.Attributes exposing (id, class, value, placeholder, type_, style)
 import Html.Events exposing (onInput, onClick, onBlur, onSubmit)
+
 import Http
 import Json.Encode
-import Json.Decode exposing (Decoder, map)
+import Json.Decode exposing (Decoder)
 import Json.Decode.Pipeline exposing (decode, required)
 --import WebSocket
 
@@ -59,8 +60,8 @@ emptyNote = {
 
 -- UPDATE
 
-type Msg =
-  NoOp
+type Msg
+  = NoOp
   | Reset
   | Edit NoteId String Bool
   | Update NoteId String String
@@ -74,11 +75,14 @@ type Msg =
   | NoteUpdated (Result Http.Error Bool)
   | NoteDeleted (Result Http.Error Bool)
 
+
 update : Msg -> Model -> (Model, Cmd Msg)
 update msg model =
   case msg of
     NoOp -> model ! []
+
     Reset -> model ! []
+
     Edit id field state ->
       { model | notes = List.map (modifyNote id (\note -> updateNote field msg note)) model.notes }
       ! [
@@ -86,18 +90,26 @@ update msg model =
           Task.attempt (\_ -> NoOp) (Dom.focus <| "note-" ++ toString id)
         else
           updateNoteCmd id field (findNoteField model.notes id field) ]
+
     Update id field text ->
       { model | notes = List.map (modifyNote id (\note -> updateNote field msg note)) model.notes }
       ! []
+
     EditNew field state ->
       { model | new = updateNote field msg model.new }
       ! []
+
     UpdateNew field text ->
       { model | new = updateNote field msg model.new }
       ! []
+
     Insert ->
-      { model | notes = List.append model.notes [ model.new ], new = emptyNote }
-      ! [ insertNoteCmd model.new ]
+      if model.new.body.text /= "" || model.new.title.text /= "" then
+        { model | notes = List.append model.notes [ model.new ], new = emptyNote }
+        ! [ insertNoteCmd model.new ]
+      else
+        model ! []
+
     Delete id ->
       { model | notes = List.filter (\note -> note.id /= id) model.notes }
       ! [ deleteNoteCmd id ]
@@ -105,15 +117,20 @@ update msg model =
     NotesFetched (Ok data) ->
       { model | notes = data }
       ! []
+
+
     NoteInserted (Ok data) ->
       model
       ! [ fetchNotesCmd ]
+
     NoteUpdated (Ok data) ->
       model
       ! [ fetchNotesCmd ]
+
     NoteDeleted (Ok data) ->
       model
       ! [ fetchNotesCmd ]
+
     _ ->
       model
       ! []
@@ -209,7 +226,7 @@ decodeNote =
 
 decodeTextField : Decoder TextField
 decodeTextField =
-  map toTextField Json.Decode.string
+  Json.Decode.map toTextField Json.Decode.string
 
 toTextField text =
   { text = text, editing = False }
@@ -227,34 +244,34 @@ toTextField text =
 view : Model -> Html.Html Msg
 view model =
   Html.div [] [
-    Html.ul [] (List.map noteView model.notes)
+    Html.node "link" [ Html.Attributes.rel "stylesheet", Html.Attributes.href "style.css" ] []
+    , Html.ul [ id "notes-list" ] (List.map noteView model.notes)
     , newNoteView model.new
   ]
 
+noteView note =
+  Html.li [] [
+    Html.button [ class "delete", onClick (Delete note.id) ] [ Html.text "X" ]
+    , textInputView note.id "title" note.title
+    , textInputView note.id "body" note.body
+  ]
+
+textInputView noteId field data =
+  if not data.editing then
+    Html.div [ class field, onClick (Edit noteId field True) ] [ Html.text data.text ]
+  else
+    Html.div [] [
+      Html.textarea [ id ("note-" ++ toString noteId), class field, onInput (Update noteId field), onBlur (Edit noteId field False) ] [ Html.text data.text ] ]
+
 newNoteView note =
-  Html.div [] [
+  Html.div [ id "note-add" ] [
     Html.form [ onSubmit Insert ] [
       Html.input [ placeholder "Title", value note.title.text, onInput (UpdateNew "title") ] []
       , Html.br [] []
       , Html.textarea [ placeholder "Body", value note.body.text, onInput (UpdateNew "body") ] []
       , Html.br [] []
-      , Html.button [ type_ "submit" ] [ Html.text "Create" ]
+      , Html.button [ type_ "submit" ] [ Html.text "Add" ]
     ]
   ]
 
-noteView note =
-  Html.li [] (
-    [
-      Html.button [ style [ ("float", "right") ], onClick (Delete note.id) ] [ Html.text "X" ],
-      textInputView note.id "title" note.title,
-      textInputView note.id "body" note.body
-    ]
-  )
-
-textInputView noteId field data =
-  if data.editing then
-    Html.div [] [
-      Html.textarea [ id ("note-" ++ toString noteId), onInput (Update noteId field), onBlur (Edit noteId field False) ] [ Html.text data.text ] ]
-  else
-    Html.div [ onClick (Edit noteId field True) ] [ Html.text data.text ]
 
