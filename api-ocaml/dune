@@ -1,0 +1,3 @@
+(executable
+  (name server)
+  (libraries cohttp-lwt-unix yojson sqlite3 str))
