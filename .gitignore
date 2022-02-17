@@ -1,4 +1,3 @@
-.*.swp
-.*.swo
+.*.sw?
 node_modules
 elm-stuff
